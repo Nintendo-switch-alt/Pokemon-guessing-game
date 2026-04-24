@@ -50,7 +50,18 @@ const pokemonList = [
     { name: 'Mega Gengar', id: 10059 },
     { name: 'Mega Tyranitar', id: 10119 },
     { name: 'Mega Salamence', id: 10115 },
-    { name: 'Mega Metagross', id: 10148 }
+    { name: 'Mega Metagross', id: 10148 },
+    // Gigantamax forms
+    { name: 'Gigantamax Charizard', id: 10199, fallbackId: 6 },
+    { name: 'Gigantamax Pikachu', id: 10080, fallbackId: 25 },
+    { name: 'Gigantamax Meowth', id: 10082, fallbackId: 52 },
+    { name: 'Gigantamax Gengar', id: 10201, fallbackId: 94 },
+    { name: 'Gigantamax Machamp', id: 10209, fallbackId: 68 },
+    { name: 'Gigantamax Lapras', id: 10210, fallbackId: 131 },
+    { name: 'Gigantamax Snorlax', id: 10143, fallbackId: 143 },
+    { name: 'Gigantamax Eevee', id: 10200, fallbackId: 133 },
+    { name: 'Gigantamax Corviknight', id: 10207, fallbackId: 823 },
+    { name: 'Gigantamax Alcremie', id: 10217, fallbackId: 869 }
 ];
 
 let currentQuestion = 0;
@@ -86,12 +97,34 @@ function loadNextQuestion() {
 
     currentPokemon = questionPool[currentQuestion];
 
-    const imageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/pokemon/other/official-artwork/${currentPokemon.id}.png`;
     const img = document.getElementById('pokemonImage');
-    img.src = imageUrl;
-    img.onerror = function () {
-        this.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/pokemon/${currentPokemon.id}.png`;
+    img.classList.add('loading');
+    img.src = '';
+
+    const officialArtUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${currentPokemon.id}.png`;
+    const frontSpriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${currentPokemon.id}.png`;
+    const fallbackSpriteUrl = currentPokemon.fallbackId
+        ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${currentPokemon.fallbackId}.png`
+        : null;
+
+    img.onload = function () {
+        img.classList.remove('loading');
     };
+
+    let fallbackStage = 0;
+    img.onerror = function () {
+        fallbackStage++;
+        if (fallbackStage === 1) {
+            // First fallback: front sprite with the same ID
+            this.src = frontSpriteUrl;
+        } else if (fallbackStage === 2 && fallbackSpriteUrl) {
+            // Second fallback: official artwork of the base Pokémon
+            this.src = fallbackSpriteUrl;
+        } else {
+            img.classList.remove('loading');
+        }
+    };
+    img.src = officialArtUrl;
 
     document.getElementById('questionNumber').textContent = currentQuestion + 1;
     document.getElementById('currentScore').textContent = Math.round(score);
