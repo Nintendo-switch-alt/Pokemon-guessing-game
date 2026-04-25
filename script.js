@@ -41,16 +41,16 @@ const pokemonList = [
     { name: 'Medicham', id: 308 },
     { name: 'Manectric', id: 310 },
     // Mega Evolutions
-    { name: 'Mega Charizard X', id: 10034 },
-    { name: 'Mega Charizard Y', id: 10035 },
-    { name: 'Mega Mewtwo Y', id: 10144 },
-    { name: 'Mega Rayquaza', id: 10079 },
-    { name: 'Mega Garchomp', id: 10058 },
-    { name: 'Mega Lucario', id: 10076 },
-    { name: 'Mega Gengar', id: 10059 },
-    { name: 'Mega Tyranitar', id: 10119 },
-    { name: 'Mega Salamence', id: 10115 },
-    { name: 'Mega Metagross', id: 10148 },
+    { name: 'Mega Charizard X', id: 10034, fallbackId: 6 },
+    { name: 'Mega Charizard Y', id: 10035, fallbackId: 6 },
+    { name: 'Mega Mewtwo Y', id: 10144, fallbackId: 150 },
+    { name: 'Mega Rayquaza', id: 10079, fallbackId: 384 },
+    { name: 'Mega Garchomp', id: 10058, fallbackId: 445 },
+    { name: 'Mega Lucario', id: 10076, fallbackId: 448 },
+    { name: 'Mega Gengar', id: 10059, fallbackId: 94 },
+    { name: 'Mega Tyranitar', id: 10119, fallbackId: 248 },
+    { name: 'Mega Salamence', id: 10115, fallbackId: 373 },
+    { name: 'Mega Metagross', id: 10148, fallbackId: 376 },
     // Gigantamax forms
     { name: 'Gigantamax Charizard', id: 10199, fallbackId: 6 },
     { name: 'Gigantamax Pikachu', id: 10080, fallbackId: 25 },
@@ -103,7 +103,7 @@ function loadNextQuestion() {
 
     const officialArtUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${currentPokemon.id}.png`;
     const frontSpriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${currentPokemon.id}.png`;
-    const fallbackSpriteUrl = currentPokemon.fallbackId
+    const fallbackOfficialArtUrl = currentPokemon.fallbackId
         ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${currentPokemon.fallbackId}.png`
         : null;
 
@@ -111,17 +111,21 @@ function loadNextQuestion() {
         img.classList.remove('loading');
     };
 
-    let fallbackStage = 0;
     img.onerror = function () {
-        fallbackStage++;
-        if (fallbackStage === 1) {
-            // First fallback: front sprite with the same ID
-            this.src = frontSpriteUrl;
-        } else if (fallbackStage === 2 && fallbackSpriteUrl) {
-            // Second fallback: official artwork of the base Pokémon
-            this.src = fallbackSpriteUrl;
+        if (currentPokemon.fallbackId) {
+            // Special form (Mega/Gigantamax): skip the front sprite of the form ID
+            // because it may map to a completely unrelated Pokémon (e.g. cosplay Pikachu).
+            // Fall back directly to the base Pokémon's official artwork instead.
+            this.onerror = function () {
+                img.classList.remove('loading');
+            };
+            this.src = fallbackOfficialArtUrl;
         } else {
-            img.classList.remove('loading');
+            // Standard Pokémon: try the front sprite as a secondary source.
+            this.onerror = function () {
+                img.classList.remove('loading');
+            };
+            this.src = frontSpriteUrl;
         }
     };
     img.src = officialArtUrl;
